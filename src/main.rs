@@ -11,9 +11,18 @@ use clap::Parser;
 struct Cli {
     ///Optional argument for the number of sides each die has
     die: Option<u32>,
+
     #[arg(default_value_t = 1)]
     ///Optional argument for the number of dice to roll
     num: u32,
+
+    ///Show maximum possible roll, highest roll, lowest roll, expected average roll, and actual average roll
+    #[arg(short,long)]
+    info: bool,
+
+    ///Get rid of single lowest roll
+    #[arg(short,long)]
+    lowest: bool,
 }
 
 struct Dice {
@@ -35,6 +44,19 @@ impl Dice {
             }
             println!("Total of {} D{}: {}", self.results.len(), self.die, sum);
         }
+    }
+
+    fn lose_lowest(&mut self) -> (usize, u32){
+        let mut lowest = self.results[0];
+        let mut index = 0;
+
+        for i in 1..self.results.len() {
+            if self.results[i] < lowest {
+                lowest = self.results[i];
+                index = i;
+            }
+        }
+        (index, self.results.remove(index))
     }
 }
 
@@ -87,7 +109,7 @@ fn no_args() -> Dice {
 
 fn main() {
     let cli = Cli::parse();
-    let result: Dice;
+    let mut result: Dice;
     
     if let Some(die) = cli.die {
         result = Dice {
@@ -99,4 +121,38 @@ fn main() {
     }
 
     result.print_result();
+
+    if cli.lowest == true {
+        let lowest = result.lose_lowest();
+
+        println!("\nRoll {} was the lowest with value of {}\n", lowest.0 + 1, lowest.1);
+        println!("New results:");
+        result.print_result();
+    }
+
+    if cli.info == true {
+        let num = result.results.len() as f64;
+        let die = result.die as f64;
+        let len = result.results.len() as f64;
+        let mut sum: f64 = 0.0;
+        let mut high = result.results[0];
+        let mut low = result.results[0];
+
+        for i in 0..result.results.len() {
+            sum += result.results[i] as f64;
+
+            if result.results[i] > high {
+                high = result.results[i];
+            }
+            if result.results[i] < low {
+                low = result.results[i];
+            }
+        }
+
+        println!("\nMaximum possible roll: {}", len * die);
+        println!("Highest roll: {}", high);
+        println!("Lowest roll: {}", low);
+        println!("Expected average: {}", (die + 1.0) / 2.0);
+        println!("Actual average: {}", sum / num)
+    }
 }
