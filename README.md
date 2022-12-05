@@ -1,4 +1,5 @@
-A project to rewrite my dice rolling program in rust.
-Hopefully it'll be more efficient and possibly have more functionality.
+A CLI dice rolling simulator written in Rust.
 
-For usage use `roll help`
+This is made with TTRPGs like D&D in mind, but it should work with most situations where a series of random numbers is needed.
+
+For usage `--help`
