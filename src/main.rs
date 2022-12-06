@@ -23,6 +23,10 @@ struct Cli {
     ///Get rid of single lowest roll
     #[arg(short,long)]
     lowest: bool,
+
+    ///Reroll any dice of given value (multiple inputs are okay with comma separation)
+    #[arg(short,long)]
+    reroll: Option<String>
 }
 
 struct Dice {
@@ -57,6 +61,20 @@ impl Dice {
             }
         }
         (index, self.results.remove(index))
+    }
+
+    fn reroll(&mut self, nums: Vec<u32>) -> Vec<usize> {
+        let mut indexes: Vec<usize> = Vec::new();
+        for val in nums {
+            for i in 0..self.results.len() {
+                if val == self.results[i] {
+                    indexes.push(i + 1);
+                    self.results[i] = roll(self.die);
+                }
+            }
+        }
+        indexes.sort();
+        return indexes
     }
 }
 
@@ -121,6 +139,40 @@ fn main() {
     }
 
     result.print_result();
+
+    if let Some(string) = cli.reroll {
+        let values: Vec<&str> = string.split(",").collect();
+        let mut nums: Vec<u32> = Vec::new();
+        for i in 0..values.len() {
+            if let Ok(num) = values[i].parse::<u32>() {
+                nums.push(num)
+            } else {
+                println!("{} is not an acceptable number to reroll.", values[i]);
+                process::exit(1);
+            }
+        }
+        let indexes = result.reroll(nums);
+        
+        if indexes.len() == 0 {
+            println!("No rerolls necessary.");
+        } else {
+            let mut rolls = String::new();
+            for i in 0..indexes.len() {
+                if i == 0 {
+                    rolls.push_str(&indexes[i].to_string());
+                } else if i < indexes.len() -1 {
+                    rolls.push_str(", ");
+                    rolls.push_str(&indexes[i].to_string());
+                } else {
+                    rolls.push_str(", and ");
+                    rolls.push_str(&indexes[i].to_string());
+                }
+            }
+            println!("\nRerolling rolls {}...", rolls);
+            println!("New results:");
+            result.print_result();
+        }
+    }
 
     if cli.lowest == true {
         let lowest = result.lose_lowest();
