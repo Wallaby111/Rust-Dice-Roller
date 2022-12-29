@@ -92,7 +92,7 @@ impl Dice {
         //Sort the indexes so the rolls appear in the order they were originally rolled, 
         //rather than the order that they matched
         indexes.sort();
-        return indexes
+        indexes
     }
 }
 
@@ -118,10 +118,7 @@ fn no_args() -> Dice {
     let mut num = String::new();
     io::stdin().read_line(&mut num).expect("Failed to read input.");
 
-    let num: u32 = match num.trim().parse() {
-        Ok(n) => n,
-        Err(_) => 0,
-    };
+    let num: u32 = num.trim().parse().unwrap_or(0);
 
     if num == 0 {
         println!("Please enter a positive, whole number.");
@@ -133,10 +130,7 @@ fn no_args() -> Dice {
     let mut die = String::new();
     io::stdin().read_line(&mut die).expect("Failed to read input.");
 
-    let die: u32 = match die.trim().parse() {
-        Ok(n) => n,
-        Err(_) => 0,
-    };
+    let die: u32 = die.trim().parse().unwrap_or(0);
 
     if die == 0 {
         println!("Please enter a positive, whole number.");
@@ -146,7 +140,7 @@ fn no_args() -> Dice {
     //Creating and returning the instance of Dice after generating the random results
     Dice {
         results: roll_multiple(die, num),
-        die: die,
+        die,
     }
 }
 
@@ -161,7 +155,7 @@ fn main() {
     if let Some(die) = cli.die {
         result = Dice {
             results: roll_multiple(die, cli.num),
-            die: die,
+            die,
         }
     } else {
         //If no args then use function defined earlier to ask individually
@@ -174,16 +168,16 @@ fn main() {
     //Check for rerolls first, because they will often be the lowest
     if let Some(string) = cli.reroll {
         //Collect comma separated list of results to reroll
-        let values: Vec<&str> = string.split(",").collect();
+        let values: Vec<&str> = string.split(',').collect();
         //New vec for u32 after parsing needs to stay in scope
         let mut nums: Vec<u32> = Vec::new();
-        for i in 0..values.len() {
-            if let Ok(num) = values[i].parse::<u32>() {
+        for val in values {
+            if let Ok(num) = val.parse::<u32>() {
                 //Translate &str to u32 for use
                 nums.push(num)
             } else {
                 //Quit with explanation if invalid arg is given
-                println!("{} is not an acceptable number to reroll.", values[i]);
+                println!("{} is not an acceptable number to reroll.", val);
                 process::exit(1);
             }
         }
@@ -191,7 +185,7 @@ fn main() {
         let indexes = result.reroll(nums);
         
         //If nothing was rerolled, print that
-        if indexes.len() == 0 {
+        if indexes.is_empty() {
             println!("No rerolls necessary.");
         } else {
             //Here we construct a string listing the indexes of the rolls that were rerolled
@@ -215,7 +209,7 @@ fn main() {
     }
 
     //Check for lowest flag next because nothing else mutates result
-    if cli.lowest == true {
+    if cli.lowest {
         let lowest = result.lose_lowest();
 
         //Print which roll and the value of the roll which was removed
@@ -226,7 +220,7 @@ fn main() {
     }
 
     //Check for info flag last because it's info on the final result
-    if cli.info == true {
+    if cli.info {
         //To calculate averages (which are often not whole numbers), must convert to floats
         let num = result.results.len() as f64;
         let die = result.die as f64;
